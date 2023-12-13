@@ -6,7 +6,7 @@ from aiohttp import ClientResponse
 from bs4 import BeautifulSoup
 
 from plugins.client import MangaClient, MangaCard, MangaChapter, LastChapter
-
+import requests
 
 class NineMangaClient(MangaClient):
 
@@ -80,6 +80,15 @@ class NineMangaClient(MangaClient):
         return urls
 
     async def pictures_from_chapters(self, content: bytes, response: Optional[ClientResponse] = None):
+        ses = requests.Session()
+        headers = {
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                "image/avif,image/webp,*/*;q=0.8"
+            ),
+        }
+      
         bs = BeautifulSoup(content, "html.parser")
 
         container = bs.find("select", {"id": "page"})
@@ -93,7 +102,7 @@ class NineMangaClient(MangaClient):
         images_url = []
         for page in range(pages):
             url = f'{str(response.url)[:-5]}-{count}-{(page + 1)}.html'
-            content = await self.get_url(url)
+            content = ses.get(url,headers=headers,verify=False).content
             bs = BeautifulSoup(content, "html.parser")
             images_url += [img.get("src") for img in bs.find_all("img", {"class": "manga_pic"})]
 
